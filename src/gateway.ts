@@ -121,6 +121,7 @@ function attachShard(
   })
 
   shard.on('resumed', () => {
+    state.resumes += 1
     log.info(`${tag} resumed`)
   })
 
@@ -170,7 +171,7 @@ function routeDispatch(
   state: BotState,
   config: Config,
 ): void {
-  state.countDispatch(payload.t)
+  state.countDispatch(payload.t, replayed)
   log.debug(`shard ${String(shard.id)} <- ${payload.t}${replayed ? ' (replayed)' : ''}`)
 
   if (isDispatch(payload, 'GUILD_MEMBERS_CHUNK')) {

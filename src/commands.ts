@@ -125,7 +125,10 @@ const commands: Record<string, Command> = {
 
       const total = [...context.state.dispatchCounts.values()].reduce((sum, n) => sum + n, 0)
       const rows = top.map((row) => `- \`${row.event}\` x${String(row.seen)}`)
-      return await Promise.resolve(`**Dispatches** (${String(total)} total)\n${rows.join('\n')}`)
+      return await Promise.resolve(
+        `**Dispatches** (${String(total)} total, ${String(context.state.replayed)} replayed ` +
+          `across ${String(context.state.resumes)} resume(s))\n${rows.join('\n')}`,
+      )
     },
   },
 

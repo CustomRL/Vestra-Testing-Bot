@@ -20,6 +20,17 @@ export class BotState {
   readonly guilds = new Set<string>()
   /** How many dispatches have been seen, by event name. */
   readonly dispatchCounts = new Map<string, number>()
+  /**
+   * How many dispatches arrived as replay after a resume.
+   *
+   * @remarks
+   * Tracked separately because a replayed dispatch is one the bot has already seen. Folding
+   * them into the totals would make a resume look like a burst of fresh traffic, which is
+   * exactly the distinction this bot exists to observe.
+   */
+  replayed = 0
+  /** How many times a session has been resumed. */
+  resumes = 0
 
   /**
    * Records the identity from a READY payload.
@@ -41,8 +52,9 @@ export class BotState {
    *
    * @param event - The event name.
    */
-  countDispatch(event: string): void {
+  countDispatch(event: string, wasReplayed: boolean): void {
     this.dispatchCounts.set(event, (this.dispatchCounts.get(event) ?? 0) + 1)
+    if (wasReplayed) this.replayed += 1
   }
 
   /** How long the process has been running, formatted. */
