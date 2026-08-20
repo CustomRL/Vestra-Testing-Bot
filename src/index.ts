@@ -15,6 +15,7 @@ async function main(): Promise<void> {
   const config = loadConfig()
 
   log.info(`intents: ${config.intentNames.join(', ')} (${String(config.intents)})`)
+  log.info(`transport compression: ${config.compression}`)
 
   const privileged = privilegedIntentsInUse(config.intents)
   if (privileged.length > 0) {

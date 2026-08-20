@@ -61,6 +61,7 @@ export function createFleet(config: Config, rest: REST, state: BotState): Fleet 
   const manager = new ShardManager({
     token: config.token,
     intents: config.intents,
+    compression: config.compression,
     // The gateway package takes a fetcher rather than a REST client so that it never
     // depends on `@vestra/rest`. This is where the two halves meet.
     fetchGatewayBot: async () => await rest.gateway.getBot(),

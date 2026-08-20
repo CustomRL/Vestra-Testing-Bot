@@ -1,4 +1,4 @@
-import { GatewayIntentBits, PrivilegedGatewayIntents } from 'vestra'
+import { CompressionMode, GatewayIntentBits, PrivilegedGatewayIntents } from 'vestra'
 
 /**
  * Runtime configuration, read from the environment.
@@ -14,6 +14,8 @@ export interface Config {
   intentNames: string[]
   /** An explicit shard count, or `undefined` to use Discord's recommendation. */
   shardCount: number | undefined
+  /** The transport compression to negotiate. */
+  compression: CompressionMode
   /** The prefix the command handler responds to. */
   prefix: string
 }
@@ -45,6 +47,19 @@ function parseIntents(raw: string | undefined): { intents: number; names: string
   }
 
   return { intents, names }
+}
+
+function parseCompression(raw: string | undefined): CompressionMode {
+  if (raw === undefined || raw.trim() === '') return CompressionMode.ZlibStream
+
+  const mode = raw.trim()
+  const valid = Object.values(CompressionMode)
+  if (!(valid as string[]).includes(mode)) {
+    throw new ConfigError(
+      `DISCORD_COMPRESSION must be one of ${valid.join(', ')}, got "${raw}".`,
+    )
+  }
+  return mode as CompressionMode
 }
 
 function parseShardCount(raw: string | undefined): number | undefined {
@@ -100,6 +115,7 @@ export function loadConfig(): Config {
     intents,
     intentNames: names,
     shardCount: parseShardCount(process.env['DISCORD_SHARD_COUNT']),
+    compression: parseCompression(process.env['DISCORD_COMPRESSION']),
     prefix: process.env['COMMAND_PREFIX'] ?? '!',
   }
 }
