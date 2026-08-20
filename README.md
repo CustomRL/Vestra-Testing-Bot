@@ -58,8 +58,8 @@ Both take a real session and are not free to run — a failed resume spends one 
 session starts.
 
 ```bash
-node scripts/compression-check.ts zstd-stream   # or zlib-stream, none
-node scripts/resume-check.ts 60                 # seconds to wait before reconnecting
+pnpm check:compression zstd-stream   # or zlib-stream, none
+pnpm check:resume 60                 # seconds to wait before reconnecting
 ```
 
 `compression-check` connects with one transport codec, decodes live dispatches and prints

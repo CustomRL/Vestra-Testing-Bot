@@ -9,7 +9,9 @@
   },
   "scripts": {
     "start": "node src/index.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "check:compression": "node scripts/compression-check.ts",
+    "check:resume": "node scripts/resume-check.ts"
   },
   "dependencies": {
     "vestra": "link:../Vestra/packages/vestra"
