@@ -107,9 +107,13 @@ async function run(): Promise<Totals> {
     const shard = manager.shards.get(shardId)
     if (shard === undefined) return
 
-    chunker = new MemberChunker(async (data) => {
-      await shard.send({ op: GatewayOpcodes.RequestGuildMembers, d: data })
-    }, SystemTimers)
+    chunker = new MemberChunker(
+      async (data) => {
+        await shard.send({ op: GatewayOpcodes.RequestGuildMembers, d: data })
+      },
+      SystemTimers,
+      config.intents,
+    )
 
     shard.on('error', (error) => {
       totals.errors.push(error)

@@ -20,8 +20,16 @@ export interface Config {
   prefix: string
 }
 
-/** Intents used when `DISCORD_INTENTS` is not set. */
-const DefaultIntents = ['Guilds', 'GuildMessages', 'MessageContent'] as const
+/**
+ * Intents used when `DISCORD_INTENTS` is not set.
+ *
+ * @remarks
+ * `GuildMembers` is here for `!members`. Enabling a privileged intent in the developer
+ * portal only grants permission to ask for it — the identify payload still has to carry
+ * the bit. Without it, `REQUEST_GUILD_MEMBERS` for all members is dropped silently and the
+ * chunker waits out its timeout with nothing to show for it.
+ */
+const DefaultIntents = ['Guilds', 'GuildMembers', 'GuildMessages', 'MessageContent'] as const
 
 /** Thrown when the environment is missing or malformed. */
 export class ConfigError extends Error {

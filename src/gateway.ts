@@ -103,9 +103,15 @@ function attachShard(
 ): void {
   // The chunker is not wired into `Shard` itself, so the consumer owns both halves:
   // sending the op-8 payload, and feeding the resulting chunks back in.
-  const chunker = new MemberChunker(async (data) => {
-    await shard.send({ op: GatewayOpcodes.RequestGuildMembers, d: data })
-  }, SystemTimers)
+  // Passing the intents lets the chunker reject a request Discord would silently drop,
+  // instead of the caller waiting out a timeout that can only guess at the cause.
+  const chunker = new MemberChunker(
+    async (data) => {
+      await shard.send({ op: GatewayOpcodes.RequestGuildMembers, d: data })
+    },
+    SystemTimers,
+    config.intents,
+  )
   fleet.chunkers.set(shard.id, chunker)
 
   const tag = `shard ${String(shard.id)}`
