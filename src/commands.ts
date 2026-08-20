@@ -5,6 +5,7 @@ import type {
   REST,
   Shard,
   ShardManager,
+  Timers,
 } from 'vestra'
 import type { BotState } from './state.ts'
 import { scoped } from './logger.ts'
@@ -35,6 +36,8 @@ export interface CommandContext {
   chunker: MemberChunker
   /** Accumulated bot state. */
   state: BotState
+  /** Timer sources, so the reconnect test can be driven deterministically. */
+  timers: Timers
   /** The triggering message. */
   message: GatewayMessageCreateDispatchData
   /** The arguments after the command name. */
@@ -160,6 +163,55 @@ const commands: Record<string, Command> = {
         `Fetched ${String(members.length)} member(s) in ${String(elapsed)}ms` +
         (query === '' ? '' : ` matching \`${query}\``) +
         (names === '' ? '.' : `.\nFirst few: ${names}`)
+      )
+    },
+  },
+
+  reconnect: {
+    description: 'Drops the socket resumably and reconnects. Exercises the resume path.',
+    run: async (context) => {
+      const { shard } = context
+
+      // Whether the reconnect resumed or fell back to a fresh identify is the whole
+      // result, so listen for both before dropping the socket.
+      const outcome = new Promise<string>((resolve) => {
+        const onResumed = (): void => {
+          shard.off('ready', onReady)
+          resolve('resumed')
+        }
+        const onReady = (): void => {
+          shard.off('resumed', onResumed)
+          resolve('identified')
+        }
+        shard.once('resumed', onResumed)
+        shard.once('ready', onReady)
+
+        context.timers.setTimeout(() => {
+          shard.off('resumed', onResumed)
+          shard.off('ready', onReady)
+          resolve('timed out')
+        }, 30_000)
+      })
+
+      const started = performance.now()
+      // 'resume' persists the session and closes with a resumable code. A plain close
+      // would invalidate it and turn this into a session start, which is daily-capped.
+      await shard.destroy('resume')
+      await shard.connect()
+
+      const result = await outcome
+      const elapsed = Math.round(performance.now() - started)
+
+      return (
+        `Reconnect ${result} in ${String(elapsed)}ms.\n` +
+        `- shard: ${String(shard.id)}\n` +
+        `- state: ${shard.state}\n` +
+        `- sequence: ${shard.sequence === null ? '—' : String(shard.sequence)}\n` +
+        (result === 'resumed'
+          ? 'The session survived — no session start was consumed.'
+          : result === 'identified'
+            ? 'Fell back to a fresh identify, which spends one of the daily session starts.'
+            : 'Neither RESUMED nor READY arrived within 30s.')
       )
     },
   },

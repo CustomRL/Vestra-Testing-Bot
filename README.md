@@ -49,6 +49,29 @@ runs `tsc` separately, with the same strictness the library uses.
 | `!echo <text>` | The `MessageContent` intent, and `allowed_mentions` on the way back out. |
 | `!members [query]` | `MemberChunker` — an op-8 request and the reassembly of the chunked reply. |
 | `!react` | A REST route with a percent-encoded path segment. |
+| `!reconnect` | Drops the socket resumably and reconnects, reporting whether Discord resumed the session or forced a fresh identify. |
+
+## Probes
+
+Two scripts answer questions the unit tests cannot, because they need a real counterparty.
+Both take a real session and are not free to run — a failed resume spends one of the daily
+session starts.
+
+```bash
+node scripts/compression-check.ts zstd-stream   # or zlib-stream, none
+node scripts/resume-check.ts 60                 # seconds to wait before reconnecting
+```
+
+`compression-check` connects with one transport codec, decodes live dispatches and prints
+a key-sorted digest of each `GUILD_CREATE`. Running it for two codecs and comparing digests
+is the conformance check [ADR 7](../Vestra/docs/adr/0007-zlib-stream-default.md) asks for.
+The digest must sort keys: Discord's JSON key ordering varies between connections, so
+hashing raw `JSON.stringify` output compares serialisation order rather than content.
+
+`resume-check` connects, drops the socket with a resumable close, waits, and reconnects.
+Whether `RESUMED` or `READY` arrives says whether the session survived. Running it at
+increasing delays brackets the session timeout, which Discord documents only as "a few
+minutes".
 
 ## Layout
 
@@ -61,6 +84,8 @@ runs `tsc` separately, with the same strictness the library uses.
 | `src/rest.ts` | REST client with rate-limit logging. |
 | `src/state.ts` | The small amount of state the commands report on. |
 | `src/logger.ts` | Timestamped console output. |
+| `scripts/compression-check.ts` | Transport compression conformance probe. |
+| `scripts/resume-check.ts` | Resume and session-timeout probe. |
 
 ## Notes from wiring this up
 
