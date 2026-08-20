@@ -87,6 +87,33 @@ minutes".
 | `scripts/compression-check.ts` | Transport compression conformance probe. |
 | `scripts/resume-check.ts` | Resume and session-timeout probe. |
 
+## What the probes found
+
+Measured against the live gateway on 2026-08-20. Reported upstream on
+[CustomRL/Vestra#7](https://github.com/CustomRL/Vestra/issues/7) and
+[#8](https://github.com/CustomRL/Vestra/issues/8).
+
+**Transport compression.** `zlib-stream`, `zstd-stream` and `none` all decoded live traffic
+to byte-identical payloads (key-sorted digests match; structural diff empty), largest frame
+18,106 bytes, zero errors. `zstd-stream` is not gated behind any special access. This does
+*not* touch the window-size question in ADR 7 — an 18 KB frame cannot approach Node's
+default 128 MiB `ZSTD_d_windowLogMax` — and Node 22's zstd is still Stability 1, so the
+default should stay where it is.
+
+**Session lifetime.** After a client-initiated 4000 close, the session survived a 90s gap
+and was gone by 120s:
+
+| Delay | Outcome |
+| --- | --- |
+| 5s, 60s, 90s | resumed, 150–300ms, 2 dispatches replayed |
+| 120s, 180s | fresh identify, 1.4–1.5s, nothing replayed |
+
+Discord documents this only as "a few minutes"; the observed window is nearer 90–120
+seconds. One sample per point, so treat it as a bound rather than a constant.
+
+**Resume works.** Sequence advanced 1 → 4 across a resume with the replayed dispatches
+flagged correctly, so that plumbing is right end to end.
+
 ## Notes from wiring this up
 
 Things worth knowing if you are reading the library rather than using it:
