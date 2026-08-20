@@ -196,7 +196,15 @@ function routeDispatch(
     if (replayed) return
 
     void handleMessage(
-      { rest, manager: fleet.manager, shard, chunker, state, timers: SystemTimers, message: payload.d },
+      {
+        rest,
+        manager: fleet.manager,
+        shard,
+        chunker,
+        state,
+        timers: SystemTimers,
+        message: payload.d,
+      },
       config.prefix,
     )
   }
