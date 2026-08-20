@@ -157,10 +157,17 @@ const commands: Record<string, Command> = {
       // all-members form is also gated to once per guild per 30 seconds.
       const query = context.args[0] ?? ''
       const started = performance.now()
+
+      // The chunker defaults to a 60s timeout. That is the right default for a library —
+      // a slow reply is not a failed one — but here it means a silent minute before the
+      // channel hears anything, and the overwhelmingly common cause is a missing
+      // GuildMembers intent, which will never resolve. Fail fast and say so instead.
+      await context.rest.channels.triggerTyping(context.message.channel_id)
       const members = await context.chunker.request({
         guildId,
         query,
         limit: query === '' ? 0 : 100,
+        timeoutMs: 15_000,
       })
       const elapsed = Math.round(performance.now() - started)
 
