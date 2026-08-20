@@ -76,6 +76,7 @@ Things worth knowing if you are reading the library rather than using it:
   in an `allReady` handler gets you a tick-stale view.
 - **`GatewayDispatchPayload` does not narrow on `t`.** It is a single generic interface
   rather than a union of per-event interfaces, so `payload.t === 'MESSAGE_CREATE'` narrows
-  `t` and leaves `d` as the union of every event's data. `isDispatch` in `src/gateway.ts`
-  is the type predicate that re-links them; without something like it, consumers will
-  reach for casts.
+  `t` and leaves `d` as `unknown` — the unmapped-event branch of `GatewayDispatchData`
+  contributes `unknown`, which absorbs every other member of the union. `isDispatch` in
+  `src/gateway.ts` is the type predicate that re-links them; without something like it,
+  every consumer reaches for a cast.

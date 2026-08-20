@@ -28,8 +28,9 @@ const log = scoped('gateway')
  *
  * @remarks
  * `GatewayDispatchPayload` is one generic interface rather than a union of per-event
- * interfaces, so a bare `payload.t === 'MESSAGE_CREATE'` check narrows `t` but leaves `d`
- * as the union of every event's data. This predicate re-links the two.
+ * interfaces, so a bare `payload.t === 'MESSAGE_CREATE'` check narrows `t` and leaves `d`
+ * as `unknown` — events outside `GatewayDispatchEventMap` contribute `unknown`, which
+ * absorbs the rest of the union. This predicate re-links the two.
  */
 function isDispatch<const Event extends GatewayDispatchEvents>(
   payload: GatewayDispatchPayload,
