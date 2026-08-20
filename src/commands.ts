@@ -149,9 +149,16 @@ const commands: Record<string, Command> = {
       const guildId = context.message.guild_id
       if (guildId === undefined) return 'This command only works in a guild.'
 
+      // Discord pairs an empty query with `limit: 0` to mean "every member"; a non-zero
+      // limit alongside an empty query is not a combination the API documents. The
+      // all-members form is also gated to once per guild per 30 seconds.
       const query = context.args[0] ?? ''
       const started = performance.now()
-      const members = await context.chunker.request({ guildId, query, limit: 100 })
+      const members = await context.chunker.request({
+        guildId,
+        query,
+        limit: query === '' ? 0 : 100,
+      })
       const elapsed = Math.round(performance.now() - started)
 
       const names = members
@@ -175,22 +182,26 @@ const commands: Record<string, Command> = {
       // Whether the reconnect resumed or fell back to a fresh identify is the whole
       // result, so listen for both before dropping the socket.
       const outcome = new Promise<string>((resolve) => {
-        const onResumed = (): void => {
+        // Every path clears the timer and both listeners. Leaving the timer armed would
+        // hold the event loop open for 30s after an answer had already arrived.
+        const settle = (result: string): void => {
+          context.timers.clearTimeout(timer)
+          shard.off('resumed', onResumed)
           shard.off('ready', onReady)
-          resolve('resumed')
+          resolve(result)
+        }
+        const onResumed = (): void => {
+          settle('resumed')
         }
         const onReady = (): void => {
-          shard.off('resumed', onResumed)
-          resolve('identified')
+          settle('identified')
         }
-        shard.once('resumed', onResumed)
-        shard.once('ready', onReady)
-
-        context.timers.setTimeout(() => {
-          shard.off('resumed', onResumed)
-          shard.off('ready', onReady)
-          resolve('timed out')
+        const timer = context.timers.setTimeout(() => {
+          settle('timed out')
         }, 30_000)
+
+        shard.on('resumed', onResumed)
+        shard.on('ready', onReady)
       })
 
       const started = performance.now()
