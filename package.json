@@ -11,7 +11,8 @@
     "start": "node src/index.ts",
     "typecheck": "tsc --noEmit",
     "check:compression": "node scripts/compression-check.ts",
-    "check:resume": "node scripts/resume-check.ts"
+    "check:resume": "node scripts/resume-check.ts",
+    "check:transport": "node scripts/transport-check.ts"
   },
   "dependencies": {
     "vestra": "link:../Vestra/packages/vestra"
