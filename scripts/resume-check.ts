@@ -71,30 +71,31 @@ async function run(): Promise<number> {
 
   let shard: Shard | undefined
   let replayed = 0
+  let resolveFirst: (session: string) => void = () => undefined
+  const first = new Promise<string>((resolve) => {
+    resolveFirst = resolve
+  })
 
   manager.on('shardSpawn', (shardId) => {
     shard = manager.shards.get(shardId)
-    shard?.on('dispatch', (_payload, wasReplayed) => {
+    if (shard === undefined) return
+
+    shard.on('dispatch', (_payload, wasReplayed) => {
       if (wasReplayed) replayed += 1
     })
-    shard?.on('closed', (code, reason, wasClean, action) => {
+    shard.on('closed', (code, reason, wasClean, action) => {
       log.info(`closed ${String(code)} clean=${String(wasClean)} action=${action} ${reason}`)
     })
-  })
-
-  const first = new Promise<{ session: string; sequence: number | null }>((resolve) => {
-    manager.on('shardSpawn', (shardId) => {
-      manager.shards.get(shardId)?.once('ready', (data) => {
-        resolve({ session: data.session_id, sequence: null })
-      })
+    shard.once('ready', (data) => {
+      resolveFirst(data.session_id)
     })
   })
 
   await manager.connect()
-  const identity = await first
+  const session = await first
   if (shard === undefined) throw new Error('The shard was never created.')
 
-  log.info(`connected — session ${identity.session}, sequence ${String(shard.sequence)}`)
+  log.info(`connected — session ${session}, sequence ${String(shard.sequence)}`)
   const sequenceBefore = shard.sequence
 
   // 'resume' persists session state and closes with a resumable code. Closing with 1000
