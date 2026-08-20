@@ -1,0 +1,21 @@
+{
+  "name": "vestra-testing-bot",
+  "version": "0.0.0",
+  "description": "A live Discord bot that exercises the Vestra library against the real gateway",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "scripts": {
+    "start": "node src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "vestra": "link:../Vestra/packages/vestra"
+  },
+  "devDependencies": {
+    "@types/node": "26.2.0",
+    "typescript": "6.0.3"
+  }
+}
