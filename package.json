@@ -12,7 +12,8 @@
     "typecheck": "tsc --noEmit",
     "check:compression": "node scripts/compression-check.ts",
     "check:resume": "node scripts/resume-check.ts",
-    "check:transport": "node scripts/transport-check.ts"
+    "check:transport": "node scripts/transport-check.ts",
+    "check:client": "node scripts/client-check.ts"
   },
   "dependencies": {
     "vestra": "link:../Vestra/packages/vestra"
