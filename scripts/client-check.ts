@@ -22,7 +22,7 @@ const client = new Client({
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
   ],
-  cache: { messages: { max: 50 }, members: true, users: true },
+  cache: { messages: { max: 50 }, members: true, users: true, threads: true },
 })
 
 client.on('ready', (user) => {
@@ -55,9 +55,14 @@ await new Promise((resolve) => setTimeout(resolve, 8_000))
 log.info('--- results ---')
 log.info(`dispatches seen: ${String(rawCount)}`)
 log.info(`guilds cached: ${String(client.cache.guilds.size)}`)
+log.info(`channels cached: ${String(client.cache.channels.size)}`)
+log.info(`threads cached: ${String(client.cache.threads.size)}`)
 log.info(`roles cached: ${String(client.cache.roles.size)}`)
 for (const guild of client.cache.guilds.values()) {
-  log.info(`  ${guild.name}: ${String(client.cache.roles.group(guild.id).length)} roles grouped`)
+  log.info(
+    `  ${guild.name}: ${String(client.cache.roles.group(guild.id).length)} roles, ` +
+      `${String(client.cache.channels.group(guild.id).length)} channels grouped`,
+  )
 }
 log.info(`members cached: ${String(client.cache.members.size)}`)
 log.info(`users cached: ${String(client.cache.users.size)}`)
