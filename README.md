@@ -122,10 +122,12 @@ Things worth knowing if you are reading the library rather than using it:
   a `send` that emits the op-8 payload, and routing `GUILD_MEMBERS_CHUNK` dispatches back
   into `handleChunk`. Reasonable while the client does not exist, but it means the chunker
   is unreachable from a bare `Shard`.
-- **`ShardManagerEvents.allReady` fires before consumer `ready` handlers.** The manager
-  registers its own `once('ready')` inside `connect()` *before* it emits `shardSpawn`, so
-  a consumer attaching listeners on `shardSpawn` is always second in line. Reading state
-  in an `allReady` handler gets you a tick-stale view.
+- **`ShardManagerEvents.allReady` now fires after consumer `ready` handlers**, as of
+  [CustomRL/Vestra#11](https://github.com/CustomRL/Vestra/issues/11). It used to run first,
+  because the manager registers its own `once('ready')` inside `connect()` before it emits
+  `shardSpawn` — so a consumer attaching on `shardSpawn` was always second in line and
+  state read in an `allReady` handler was a tick stale. This bot found it: it logged
+  `0 guild(s) known` a fraction before its own handler stored two.
 - **`GatewayDispatchPayload` narrows on `t` as of
   [CustomRL/Vestra#10](https://github.com/CustomRL/Vestra/issues/10).** It used to be one
   interface parameterised by the event name, so `t` narrowed and `d` came out as `unknown`

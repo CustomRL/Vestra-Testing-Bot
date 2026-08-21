@@ -56,10 +56,11 @@ export function createFleet(config: Config, rest: REST, state: BotState): Fleet 
   })
 
   manager.on('allReady', () => {
-    // No guild count here on purpose. `ShardManager` registers its own `once('ready')`
-    // before it emits `shardSpawn`, so this fires ahead of the consumer's READY handler
-    // and any state read here is a tick stale.
-    log.info(`all ${String(manager.shardCount)} shard(s) reported ready`)
+    // Safe to read accumulated state here as of CustomRL/Vestra#11: the manager defers
+    // this emit by a microtask, so the consumer's READY handlers have already run.
+    log.info(
+      `all ${String(manager.shardCount)} shard(s) ready — ${String(state.guilds.size)} guild(s) known`,
+    )
   })
 
   manager.on('sessionStartWarning', (remaining, total) => {
