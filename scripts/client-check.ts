@@ -21,8 +21,10 @@ const client = new Client({
     GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildVoiceStates,
+    GatewayIntentBits.GuildPresences,
   ],
-  cache: { messages: { max: 50 }, members: true, users: true, threads: true },
+  cache: { messages: { max: 50 }, members: true, users: true, threads: true, voiceStates: true, presences: true },
 })
 
 client.on('ready', (user) => {
@@ -67,6 +69,12 @@ for (const guild of client.cache.guilds.values()) {
 log.info(`members cached: ${String(client.cache.members.size)}`)
 log.info(`users cached: ${String(client.cache.users.size)}`)
 log.info(`messages cached: ${String(client.cache.messages.size)}`)
+log.info(`voice states cached: ${String(client.cache.voiceStates.size)}`)
+log.info(`presences cached: ${String(client.cache.presences.size)}`)
+for (const presence of client.cache.presences.values()) {
+  const what = presence.activities.map((a) => `${a.name}`).join(', ')
+  log.info(`  ${presence.userId}: ${presence.status}${what === '' ? '' : ` — ${what}`}`)
+}
 log.info(`client.user: ${client.user?.tag ?? 'none'}`)
 
 await client.destroy()
