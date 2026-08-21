@@ -126,9 +126,10 @@ Things worth knowing if you are reading the library rather than using it:
   registers its own `once('ready')` inside `connect()` *before* it emits `shardSpawn`, so
   a consumer attaching listeners on `shardSpawn` is always second in line. Reading state
   in an `allReady` handler gets you a tick-stale view.
-- **`GatewayDispatchPayload` does not narrow on `t`.** It is a single generic interface
-  rather than a union of per-event interfaces, so `payload.t === 'MESSAGE_CREATE'` narrows
-  `t` and leaves `d` as `unknown` — the unmapped-event branch of `GatewayDispatchData`
-  contributes `unknown`, which absorbs every other member of the union. `isDispatch` in
-  `src/gateway.ts` is the type predicate that re-links them; without something like it,
-  every consumer reaches for a cast.
+- **`GatewayDispatchPayload` narrows on `t` as of
+  [CustomRL/Vestra#10](https://github.com/CustomRL/Vestra/issues/10).** It used to be one
+  interface parameterised by the event name, so `t` narrowed and `d` came out as `unknown`
+  — events missing from `GatewayDispatchEventMap` take the `unknown` branch of
+  `GatewayDispatchData`, and `unknown` absorbs every other member of a union. This bot
+  carried an `isDispatch` type predicate to work around it. It is a union now, a plain
+  `payload.t === 'MESSAGE_CREATE'` check narrows both, and the predicate is gone.

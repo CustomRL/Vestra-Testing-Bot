@@ -3,7 +3,6 @@ import {
   MemberChunker,
   ShardManager,
   SystemTimers,
-  type GatewayDispatchEvents,
   type GatewayDispatchPayload,
   type REST,
   type Shard,
@@ -18,26 +17,6 @@ import { scoped } from './logger.ts'
  */
 
 const log = scoped('gateway')
-
-/**
- * Narrows a dispatch payload to one event.
- *
- * @param payload - The dispatch to test.
- * @param event - The event name to match.
- * @returns Whether the payload is that event.
- *
- * @remarks
- * `GatewayDispatchPayload` is one generic interface rather than a union of per-event
- * interfaces, so a bare `payload.t === 'MESSAGE_CREATE'` check narrows `t` and leaves `d`
- * as `unknown` — events outside `GatewayDispatchEventMap` contribute `unknown`, which
- * absorbs the rest of the union. This predicate re-links the two.
- */
-function isDispatch<const Event extends GatewayDispatchEvents>(
-  payload: GatewayDispatchPayload,
-  event: Event,
-): payload is GatewayDispatchPayload & { t: Event; d: GatewayDispatchPayload<Event>['d'] } {
-  return payload.t === event
-}
 
 /** The running fleet, and the chunkers bound to it. */
 export interface Fleet {
@@ -180,24 +159,24 @@ function routeDispatch(
   state.countDispatch(payload.t, replayed)
   log.debug(`shard ${String(shard.id)} <- ${payload.t}${replayed ? ' (replayed)' : ''}`)
 
-  if (isDispatch(payload, 'GUILD_MEMBERS_CHUNK')) {
+  if (payload.t === 'GUILD_MEMBERS_CHUNK') {
     chunker.handleChunk(payload.d)
     return
   }
 
-  if (isDispatch(payload, 'GUILD_CREATE')) {
+  if (payload.t === 'GUILD_CREATE') {
     state.guilds.add(payload.d.id)
     return
   }
 
-  if (isDispatch(payload, 'GUILD_DELETE')) {
+  if (payload.t === 'GUILD_DELETE') {
     // An outage marks the guild unavailable; only a real removal drops it from the set.
     if (payload.d.unavailable === true) return
     state.guilds.delete(payload.d.id)
     return
   }
 
-  if (isDispatch(payload, 'MESSAGE_CREATE')) {
+  if (payload.t === 'MESSAGE_CREATE') {
     // Replayed messages were already handled before the disconnect; running them again
     // would double every command issued in the seconds before a resume.
     if (replayed) return
